@@ -6,45 +6,121 @@
 #include <sys/stat.h>
 
 //Declaring file pointer
-FILE *filptr; 
+FILE *filepointer; 
 
 /* Initializing the file pointer with NULL*/
 void initStorageManager(void){
-    filptr = NULL;   
+    filepointer = NULL;   
     SM_PageHandle pghndl = NULL;
 }
-
-RC closePageFile (SM_FileHandle *fHandle)
-{
-	//if closing the file is success
-	RC PageFileClosed = fclose(fHandle->mgmtInfo);// closing the file
-    return PageFileClosed == 0? RC_OK : RC_FILE_NOT_FOUND; 
-}
-
+//Create Page File
 RC createPageFile (char *fileName){
-    FILE *fil_p;
+    FILE *fil_p = fopen(fileName,"w+");
 	
-    fil_p = fopen(fileName,"w+");
     if(fil_p == NULL){
         return RC_FILE_NOT_FOUND;
     }
     else{
-		char *newpage;
         // This page is for zeroes
-		newpage = (char *)calloc(PAGE_SIZE, sizeof(char));
-		char *twopage;
-        // This page is for writng value 1
-		twopage = (char*)malloc(PAGE_SIZE * sizeof(char));
+		char *zeroPage = (char *)calloc(PAGE_SIZE, sizeof(char));
+		// This page is for writng value 1
+		char *pageWithValueOne = (char *)malloc(PAGE_SIZE * sizeof(char));
         fputs("1",fil_p);
         //This writes value 1 in the second page
-        fwrite(newpage, PAGE_SIZE, 1, fil_p);
-		free(newpage);
-		fwrite(twopage, PAGE_SIZE, 1, fil_p);
-		free(twopage);
+        fwrite(zeroPage, PAGE_SIZE, 1, fil_p);
+		free(zeroPage);
+		fwrite(pageWithValueOne, PAGE_SIZE, 1, fil_p);
+		free(pageWithValueOne);
         return RC_OK;
     }
 	fclose(fil_p);
 }
+
+//Open Page file
+// RC openPageFile (char *fileName, SM_FileHandle *fHandle)
+// {
+//     int fil_pt;
+// 	//Open the page file
+// 	FILE *fil_p = fopen(fileName, "r+");		
+    
+		
+//     fHandle->mgmtInfo;
+// 	if(fil_p!=NULL)	//if file exists
+// 	{
+// 		/*update the fileHandle attributes*/
+        
+// 		fHandle->fileName = fileName;
+//         fHandle->fileName;	//store the file name
+
+// 		/*read headerPage to get the Total Number of Pages*/
+// 		char *header;
+// 		char* pageCounter = (char*)calloc(PAGE_SIZE,sizeof(char));
+//         char* totalPage;
+// 		fgets(pageCounter,PAGE_SIZE,fil_p);
+// 		totalPage = pageCounter;
+//         fHandle->curPagePos;
+// 		fHandle->totalNumPages = atoi(totalPage); //convert to integer
+// 		fHandle->curPagePos = 0;	//store the current page position
+
+// 		//store the File pointer information in the Management info of Page Handle
+// 		fHandle->mgmtInfo = fil_p;
+//         fHandle->totalNumPages;
+
+// 		free(pageCounter);	
+//         fHandle->mgmtInfo;	//free memory to avoid memory leaks
+
+// 		return RC_OK;
+// 	}
+// 	else	//if file does not exists
+// 	{
+// 		return RC_FILE_NOT_FOUND;
+// 	}
+// }
+
+
+//Open page file
+RC openPageFile(char *fileName, SM_FileHandle *fHandle) {
+    FILE *fil_p = fopen(fileName, "r+");
+    
+    if (fil_p == NULL) {
+        return RC_FILE_NOT_FOUND;
+    }
+
+    // Initialize fileHandle attributes
+    fHandle->fileName = strdup(fileName);
+    fHandle->totalNumPages = 0;
+    fHandle->curPagePos = 0;
+    fHandle->mgmtInfo = fil_p;
+
+    // Read header page to get the total number of pages
+    char pageCounter[PAGE_SIZE];
+    if (fgets(pageCounter, PAGE_SIZE, fil_p) != NULL) {
+        fHandle->totalNumPages = atoi(pageCounter);
+        return RC_OK;
+    } else {
+        fclose(fil_p);
+        free(fHandle->fileName);
+        return RC_FILE_NOT_FOUND; // Handle both file not found and read errors
+    }
+}
+
+
+
+//Close the page file
+RC closePageFile (SM_FileHandle *fHandle)
+{
+	//Attempt to close the file handle
+	RC result = fclose(fHandle->mgmtInfo);// closing the file
+    return result == 0? RC_OK : RC_FILE_NOT_FOUND; 
+}
+
+//Destroy the page file
+RC destroyPageFile (char *fileName)
+{
+	int  destroyedFile = remove(fileName);
+    return destroyedFile==0? RC_OK: RC_FILE_NOT_FOUND;
+}
+
 
 int getBlockPos (SM_FileHandle *fHandle)
 {
@@ -52,50 +128,9 @@ int getBlockPos (SM_FileHandle *fHandle)
 	return fHandle->curPagePos;
 }
 
-RC destroyPageFile (char *fileName)
-{
-	int  desFile = remove(fileName);
-    return desFile==0? RC_OK: RC_FILE_NOT_FOUND;
-}
 
-RC openPageFile (char *fileName, SM_FileHandle *fHandle)
-{
-    int fil_pt;
-	FILE *fil_p;		//file pointer
-    
-	fil_p = fopen(fileName, "r+");	//open the pageFile
-    fHandle->mgmtInfo;
-	if(fil_p!=NULL)	//if file exists
-	{
-		/*update the fileHandle attributes*/
-        
-		fHandle->fileName = fileName;
-        fHandle->fileName;	//store the file name
 
-		/*read headerPage to get the Total Number of Pages*/
-		char *header;
-		char* pageCounter = (char*)calloc(PAGE_SIZE,sizeof(char));
-        char* totalPage;
-		fgets(pageCounter,PAGE_SIZE,fil_p);
-		totalPage = pageCounter;
-        fHandle->curPagePos;
-		fHandle->totalNumPages = atoi(totalPage); //convert to integer
-		fHandle->curPagePos = 0;	//store the current page position
 
-		//store the File pointer information in the Management info of Page Handle
-		fHandle->mgmtInfo = fil_p;
-        fHandle->totalNumPages;
-
-		free(pageCounter);	
-        fHandle->mgmtInfo;	//free memory to avoid memory leaks
-
-		return RC_OK;
-	}
-	else	//if file does not exists
-	{
-		return RC_FILE_NOT_FOUND;
-	}
-}
 
 
 
