@@ -39,23 +39,26 @@ Each function helps in doing a specific task associated with Read/write of block
     By calling the already existing readBlock function this function updates the argument and runs the readblock function.
 
 9. readCurrentBlock:
-    This block also follows the above readBlock and manipulates the argument to read the current block.
-    The value of current block can be taken from the fHandle stucture curPagePos.
+    This function reads the current block (page) specified by the current position in fHandle into the memPage buffer.
 
 10. readNextBlock:
-    We use the getBlockPos fucntion to read the current block poition and updates the argument by +1 and runs the readBlock function.
+    This function reads the block immediately after the current block into the memPage buffer.
 
 11. readLastBlock:
-    We get the last block position by subtracting 1 with totalNumPage. We can pass that argument into readblock and read the last block.
+    This function reads the last block (page) of the file specified by fHandle into the memPage buffer.
 
 12. readPreviousBlock:
     We can pass the argument to readBlock. The argument is current Page position subtracted by 1.
 
 13. writeBlock:
-    We write a page to disk using fwrite file function using the absolutePosition.
+    This function writes the contents of the memPage buffer to the specified block (page) with the given pageNum in the file specified by fHandle
 
 14. write currentblockPosition:
-    e write a page to disk using fwrite file function using the current block Position.
+    This function writes the contents of the memPage buffer to the current block (page) specified by the current position in fHandle.
+
+15. appendEmptyBlock: 
+    This function appends an empty block (page) to the end of the file specified by fHandle. It returns RC_OK if successful and RC_WRITE_FAILED if there is an error in appending the block.
 
 15. ensureCapacity:
+    This function ensures that the file specified by fHandle has a capacity of at least numberOfPages. If the file already has the required capacity or more, it returns RC_OK. If the capacity needs to be increased by adding empty pages, it does so and returns RC_OK. If there's an error in the process, it returns RC_FILE_NOT_FOUND
     

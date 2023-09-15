@@ -193,121 +193,171 @@ RC readLastBlock(SM_FileHandle *fHandle, SM_PageHandle memPage) {
 
 /* writing blocks to a page file */
 
+//Write Block to a page file
+RC writeBlock(int pageNum, SM_FileHandle *fHandle, SM_PageHandle memPage) {
+    int numPages = fHandle->totalNumPages;
 
+    // Check if pageNum is within the valid range (0 to numPages-1)
+    if (pageNum >= 0 && pageNum < numPages) {
+        // Calculate the byte offset to the specified page
+        long offset = (long)(pageNum + 1) * PAGE_SIZE;
 
-RC writeBlock (int pageNum, SM_FileHandle *fHandle, SM_PageHandle memPage)
-{
-	//if numPages is correct
-	int numPages = fHandle->totalNumPages;
-	if(!(pageNum > (numPages - 1) || pageNum < 0))
-	{
-		//seek to page number specified
-		void * info = fHandle->mgmtInfo;
-		fseek(info,(pageNum+1)*4096,SEEK_SET);
-		//write the block
-		fwrite(memPage,PAGE_SIZE,sizeof(char),info);
-		int Pagepos = fHandle->curPagePos;
-		//updating pages to the presen position
-		Pagepos = pageNum;
-		fHandle->curPagePos = pageNum;
+        // Seek to the beginning of the specified page
+        FILE *file = fHandle->mgmtInfo;
+        if (fseek(file, offset, SEEK_SET) == 0) {
+            // Write the block (memPage) to the file
+            size_t bytesWritten = fwrite(memPage, sizeof(char), PAGE_SIZE, file);
 
-		return RC_OK;
-		
-	}
-	else
-	{
-		return RC_WRITE_FAILED;
-	}
+            if (bytesWritten == PAGE_SIZE) {
+                // Update the current page position
+                fHandle->curPagePos = pageNum;
+                return RC_OK;
+            }
+        }
+    }
 
+    // If pageNum is out of range or there's a write error, return an error code
+    return RC_WRITE_FAILED;
 }
 
-RC writeCurrentBlock (SM_FileHandle *fHandle, SM_PageHandle memPage)
-{
-	RC currentPosition = getBlockPos(fHandle);
-//current position of block
+
+
+
+
+//write current block
+RC writeCurrentBlock(SM_FileHandle *fHandle, SM_PageHandle memPage) {
+    // Get the current position of the block
+    int currentPosition = getBlockPos(fHandle);
+
+    // Write the current block
     RC writeResult = writeBlock(currentPosition, fHandle, memPage);
-//write onto the currently pointed block
-        return writeResult == 0 ? RC_OK : RC_WRITE_FAILED;
-//tenary operator is used to check write status, returns RC_OK if block is present otherwise gives error
+
+    // Check if the write operation was successful
+    if (writeResult == RC_OK) {
+        return RC_OK;
+    } else {
+        return RC_WRITE_FAILED;
+    }
 }
+
+
+//append empty block
+RC appendEmptyBlock(SM_FileHandle *fHandle) {
+    // Allocate memory to count pages and an empty page
+    int noPage;
+    char *emptyPage = (char *)calloc(PAGE_SIZE, sizeof(char));
+
+    // Get the current number of pages
+    int numPages = fHandle->totalNumPages;
+
+    // Seek to the end of the file to append an empty page
+    fseek(fHandle->mgmtInfo, (numPages + 1) * PAGE_SIZE, SEEK_SET);
+
+    // Write the empty page to the file
+    if (!(fwrite(emptyPage, PAGE_SIZE, 1, fHandle->mgmtInfo))) {
+        free(emptyPage);
+        return RC_WRITE_FAILED;
+    } else {
+        // Update the total number of pages in fHandle
+        fHandle->totalNumPages += 1;
+
+        // Update the current page position
+        fHandle->curPagePos = fHandle->totalNumPages - 1;
+
+        // Seek to the start of the headerPage and update the page count
+        fseek(fHandle->mgmtInfo, 0L, SEEK_SET);
+        fprintf(fHandle->mgmtInfo, "%d", fHandle->totalNumPages);
+
+        // Position the pointer back to the previous position
+        fseek(fHandle->mgmtInfo, (fHandle->totalNumPages + 1) * PAGE_SIZE, 0);
+
+        // Deallocate the memory
+        free(emptyPage);
+
+        return RC_OK;
+    }
+}
+
+
+//ensure capacity
+RC ensureCapacity(int numberOfPages, SM_FileHandle *fHandle) {
+    int currentNumPages = fHandle->totalNumPages;
+    FILE *filePointer;
+    filePointer = fopen(fHandle->fileName, "a");
+
+    if (filePointer == NULL) {
+        return RC_FILE_NOT_FOUND;
+    }
+
+    if (currentNumPages >= numberOfPages) {
+        // If the current capacity is greater or equal to the required capacity, no action needed.
+        fclose(filePointer);
+        return RC_OK;
+    } else {
+        int numOfPagesToAdd = numberOfPages - currentNumPages;
+        int i;
+
+        // Append empty blocks to reach the required capacity
+        for (i = 0; i < numOfPagesToAdd; i++) {
+            RC appendResult = appendEmptyBlock(fHandle);
+
+            if (appendResult != RC_OK) {
+                fclose(filePointer);
+                return appendResult;
+            }
+        }
+
+        fclose(filePointer);
+        return RC_OK;
+    }
+}
+
+
+
+
+
+
+
+
+
 
 //ensureCapacity method is used to maintain capacity of the file and it should be equal to numberOfPages.
-RC ensureCapacity (int numberOfPages, SM_FileHandle *fHandle)
-{
-	int temp  = fHandle->totalNumPages;
-	FILE *intpoint;
-	intpoint = fopen(fHandle->fileName,"a");
+// RC ensureCapacity (int numberOfPages, SM_FileHandle *fHandle)
+// {
+// 	int temp  = fHandle->totalNumPages;
+// 	FILE *intpoint;
+// 	intpoint = fopen(fHandle->fileName,"a");
 
-	if(temp >= numberOfPages)
-	{
-		return RC_OK;
-	}
-	else	//if capacity i.e number of pages is not maintained
-	{
-		int i, numOfPagesToAdd;
-		//find the number of pages to be added
-		numOfPagesToAdd = numberOfPages - temp;
+// 	if(temp >= numberOfPages)
+// 	{
+// 		return RC_OK;
+// 	}
+// 	else	//if capacity i.e number of pages is not maintained
+// 	{
+// 		int i, numOfPagesToAdd;
+// 		//find the number of pages to be added
+// 		numOfPagesToAdd = numberOfPages - temp;
 
-		int temp1 = numberOfPages;
+// 		int temp1 = numberOfPages;
 		
-//append empty blocks to get required capacity through iteration
-		i = 0;
+// //append empty blocks to get required capacity through iteration
+// 		i = 0;
 
-		while(i < numOfPagesToAdd)
-		{
-			//invoke appendEmptyBlock
-			appendEmptyBlock(fHandle);
-			i++;
-		}
-		return RC_OK;
-	}
+// 		while(i < numOfPagesToAdd)
+// 		{
+// 			//invoke appendEmptyBlock
+// 			appendEmptyBlock(fHandle);
+// 			i++;
+// 		}
+// 		return RC_OK;
+// 	}
 
-	if (intpoint == NULL){
-		return RC_FILE_NOT_FOUND;
-	}
-	fclose(intpoint);
-}
+// 	if (intpoint == NULL){
+// 		return RC_FILE_NOT_FOUND;
+// 	}
+// 	fclose(intpoint);
+// }
 
-// appendEmptyBlock method is used to add empty block to pageFile
-
-RC appendEmptyBlock (SM_FileHandle *fHandle)
-{
-	int noPage; //allocate to count pages
-	char * emptyPge;// allocates memory to emptypge
-	emptyPge = (char*)calloc(4096, 1);
-	int noOfPages = fHandle->totalNumPages;
-
-
-	fseek(fHandle->mgmtInfo,(noOfPages+1)*PAGE_SIZE,SEEK_SET);
-	void * info = fHandle->mgmtInfo;
-
-	//seeking the position of pointer if success then write an empty page to file
-	if(!(fwrite(emptyPge, PAGE_SIZE, 1, info)))
-	{
-		free(emptyPge);
-		return RC_WRITE_FAILED;
-	}
-	else
-	{
-		//update the fHandle 
-		fHandle->totalNumPages +=1;	
-	//increment total number of pages
-		int pageCt = fHandle->totalNumPages;
-		fHandle->curPagePos = pageCt - 1;
-	//update the present page position
-
-		//seek to the start of the headerPage
-		fseek(info,0L,SEEK_SET);
-		fprintf(info, "%d", pageCt);
-
-		//pointer is positioned back to the previous position 
-		fseek(info,(pageCt+1)*4096,0);
-		free(emptyPge);// delloactes the memory
-
-		return RC_OK;
-		
-	}
-}
 
 
 
