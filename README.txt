@@ -19,6 +19,7 @@ Each function helps in doing a specific task associated with Read/write of block
 
 2. createPageFile:
     This function creates a pagefile and put the null character to reserve the firstpage. It creates a new file and initializes the first two pages of the file. If the file is successfully created and initialized, it returns RC_OK. Otherwise, it returns RC_FILE_NOT_FOUND
+    
 3. openPageFile:
     This function is used to open an existing page file with the given fileName and initialize the fHandle structure. It sets various attributes of the file handle, such as the file name, total number of pages, and the current page position. If the file is successfully opened, it returns RC_OK. If the file is not found, it returns RC_FILE_NOT_FOUND
 
