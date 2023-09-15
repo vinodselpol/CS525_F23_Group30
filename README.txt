@@ -1,7 +1,7 @@
 Group Members: 
 1. Vinod Krishna Selpol - A20511584
-2. Gagan Beerappa - A
-3. Pavan Kodihalli Jagadeesh - A
+2. Gagan Beerappa - A20514760
+3. Pavan Kodihalli Jagadeesh - A20519967
 
 How to run: 
 
@@ -15,19 +15,19 @@ There are 16 functions in storage manager.
 Each function helps in doing a specific task associated with Read/write of blocks to and from a file.
 
 1. initStorageManager:
-    This function initializes the file pointer and makes it available to use in next blocks
+    This function initializes file pointer and it sets the global file pointer to null and it makes it available to use in next blocks
 
 2. createPageFile:
-    This function created a pagefile and put the null character to reserve the firstpage.
-
+    This function creates a pagefile and put the null character to reserve the firstpage. It creates a new file and initializes the first two pages of the file. If the file is successfully created and initialized, it returns RC_OK. Otherwise, it returns RC_FILE_NOT_FOUND
 3. openPageFile:
-    It takes in file name as argument and opens the pagefile for further use.
+    This function is used to open an existing page file with the given fileName and initialize the fHandle structure. It sets various attributes of the file handle, such as the file name, total number of pages, and the current page position. If the file is successfully opened, it returns RC_OK. If the file is not found, it returns RC_FILE_NOT_FOUND
 
 4. closePageFile:
-    This function closes an existing pagefile. It throws an error if the given file argument is not found.
+    This function closes an existing pagefile. It throws an error if the given file argument is not found. It attempts to close the file associated with fHandle. If the file is successfully closed, it returns RC_OK, indicating success; otherwise, it returns RC_FILE_NOT_FOUND to indicate an error.
+
 
 5. destroyPageFile:
-    It destroys the page file by using remove file function.
+    This function is used to delete (destroy) a page file with the given fileName.
 
 6. readBlock:
     This function allows to read and writes the data from the page position to the memory pointed by pageHandle.

@@ -5,6 +5,9 @@
 #include <string.h>
 #include <sys/stat.h>
 
+
+/* Manipulating the page files */
+
 //Declaring file pointer
 FILE *filepointer; 
 
@@ -35,48 +38,6 @@ RC createPageFile (char *fileName){
     }
 	fclose(fil_p);
 }
-
-//Open Page file
-// RC openPageFile (char *fileName, SM_FileHandle *fHandle)
-// {
-//     int fil_pt;
-// 	//Open the page file
-// 	FILE *fil_p = fopen(fileName, "r+");		
-    
-		
-//     fHandle->mgmtInfo;
-// 	if(fil_p!=NULL)	//if file exists
-// 	{
-// 		/*update the fileHandle attributes*/
-        
-// 		fHandle->fileName = fileName;
-//         fHandle->fileName;	//store the file name
-
-// 		/*read headerPage to get the Total Number of Pages*/
-// 		char *header;
-// 		char* pageCounter = (char*)calloc(PAGE_SIZE,sizeof(char));
-//         char* totalPage;
-// 		fgets(pageCounter,PAGE_SIZE,fil_p);
-// 		totalPage = pageCounter;
-//         fHandle->curPagePos;
-// 		fHandle->totalNumPages = atoi(totalPage); //convert to integer
-// 		fHandle->curPagePos = 0;	//store the current page position
-
-// 		//store the File pointer information in the Management info of Page Handle
-// 		fHandle->mgmtInfo = fil_p;
-//         fHandle->totalNumPages;
-
-// 		free(pageCounter);	
-//         fHandle->mgmtInfo;	//free memory to avoid memory leaks
-
-// 		return RC_OK;
-// 	}
-// 	else	//if file does not exists
-// 	{
-// 		return RC_FILE_NOT_FOUND;
-// 	}
-// }
-
 
 //Open page file
 RC openPageFile(char *fileName, SM_FileHandle *fHandle) {
@@ -121,6 +82,8 @@ RC destroyPageFile (char *fileName)
     return destroyedFile==0? RC_OK: RC_FILE_NOT_FOUND;
 }
 
+
+/* reading blocks from disc */
 
 int getBlockPos (SM_FileHandle *fHandle)
 {
